@@ -1,0 +1,14 @@
+APScheduler==3.10.4
+certifi==2024.2.2
+charset-normalizer==3.3.2
+idna==3.7
+pyTelegramBotAPI==4.18.1
+python-dotenv==1.0.1
+pytz==2024.1
+requests==2.32.2
+six==1.16.0
+SQLAlchemy==2.0.30
+telebot==0.0.5
+typing_extensions==4.12.0
+tzlocal==5.2
+urllib3==2.2.1
