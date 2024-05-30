@@ -104,8 +104,9 @@ def format_schedule(db: Session, schedule):
     for lesson_number in sorted(call_schedule.keys()):
         lesson_entry = next((entry for entry in schedule if entry.num_of_lesson == lesson_number), None)
         if lesson_entry:
+            subgroup_info = f"\n    Підгрупа: {lesson_entry.subgroup}" if lesson_entry.subgroup else ""
             formatted_schedule.append(
-                f"Пара {lesson_number}: {lesson_entry.name_of_lesson}\n     Викладач: {lesson_entry.teacher_name}\n     Аудиторія: {lesson_entry.lesson_room}\n     Час: {call_schedule[lesson_number]}"
+                f"Пара {lesson_number}: {lesson_entry.name_of_lesson}{subgroup_info}\n     Викладач: {lesson_entry.teacher_name}\n     Аудиторія: {lesson_entry.lesson_room}\n     Час: {call_schedule[lesson_number]}"
             )
         else:
             formatted_schedule.append(
