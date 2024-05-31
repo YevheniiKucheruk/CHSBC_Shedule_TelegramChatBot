@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.jobstores.base import JobLookupError
+import pytz
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -30,7 +31,8 @@ def get_db():
         db.close()
 
 bot = telebot.TeleBot(token)
-scheduler = BackgroundScheduler()
+timezone = pytz.timezone('Europe/Kiev')
+scheduler = BackgroundScheduler(timezone = timezone)
 
 def update_week():
     with get_db() as db:
@@ -40,10 +42,10 @@ def update_week():
 def initialize_scheduler():
     job_id = "update_week"
     if not scheduler.get_job(job_id):
-        scheduler.add_job(update_week, trigger=CronTrigger(day_of_week='sun', hour=0, minute=0), id=job_id)
+        scheduler.add_job(update_week, trigger=CronTrigger(day_of_week='sun', hour=0, minute=0,timezone=timezone), id=job_id)
     elif scheduler.get_job(job_id):
         scheduler.remove_job(job_id)
-        scheduler.add_job(update_week, trigger=CronTrigger(day_of_week='sun', hour=0, minute=0), id=job_id)
+        scheduler.add_job(update_week, trigger=CronTrigger(day_of_week='sun', hour=0, minute=0,timezone=timezone), id=job_id)
     scheduler.start()
 
 def clear_scheduler():
@@ -56,7 +58,7 @@ def update_user_notification_schedule(user_id, reminding_time,message):
         scheduler.remove_job(job_id)
     except JobLookupError:
         pass
-    scheduler.add_job(send_today_schedule, trigger=CronTrigger(hour=reminding_time.hour, minute=reminding_time.minute), args=[message], id=job_id)
+    scheduler.add_job(send_today_schedule, trigger=CronTrigger(timezone=timezone, hour=reminding_time.hour, minute=reminding_time.minute), args=[message], id=job_id)
 
 def the_setting_group(message):
     if is_group_selection(message):
@@ -157,6 +159,13 @@ def send_today_schedule(message):
         else:
             bot.send_message(message.chat.id, 'Будь ласка, почніть з команди /start', reply_markup=start_kb)
 
+@bot.message_handler(func=lambda message: message.text == 'Показати розклад дзвінків')
+def send_call_schedule(message):
+    with get_db() as db:
+        call_schedule = get_call_schedule(db)
+        formatted_schedule = format_call_schedule(call_schedule)
+        send_long_message(message.chat.id, f"Розклад дзвінків:\n{formatted_schedule}")
+
 @bot.message_handler(func=lambda message: message.text == 'Показати розклад на тиждень')
 def send_week_schedule(message):
     user_id = message.from_user.id
@@ -166,16 +175,15 @@ def send_week_schedule(message):
             group_name = user.name_of_group
             week_schedule = get_schedule_for_week(db, get_group_by_name(db,group_name).id)
             formatted_schedule = format_week_schedule(db, week_schedule)
-            bot.send_message(message.chat.id, f"Розклад на тиждень:\n{formatted_schedule}",reply_markup=show_shedule_kb)
+            send_long_message(message.chat.id, f"Розклад на тиждень:\n{formatted_schedule}")
         else:
             bot.send_message(message.chat.id, 'Будь ласка, почніть з команди /start', reply_markup=start_kb)
 
-@bot.message_handler(func=lambda message: message.text == 'Показати розклад дзвінків')
-def send_call_schedule(message):
-    with get_db() as db:
-        call_schedule = get_call_schedule(db)
-        formatted_schedule = format_call_schedule(call_schedule)
-        bot.send_message(message.chat.id, f"Розклад дзвінків:\n{formatted_schedule}",reply_markup=show_shedule_kb)
+def send_long_message(chat_id, message):
+    max_length = 4096
+    for i in range(0, len(message), max_length):
+        bot.send_message(chat_id, message[i:i+max_length])
+
 
 @bot.message_handler(func=lambda message: message.text == 'Показати який тиждень')
 def send_current_week_type(message):
@@ -273,12 +281,14 @@ def handle_notification_settings(message):
                 if user.reminding_time:
                     reminding_time = user.reminding_time
                     update_user_notification_schedule(user_id, reminding_time, message)
+                    bot.register_next_step_handler(message, handle_notification_settings)
             elif message.text == 'Вимкнути сповіщення':
                 update_user_info(db, user_id, is_get_reminds=False)
                 bot.send_message(message.chat.id, 'Ваше сповіщення вимкнуте!', reply_markup=generete_notification_keyboard(user.is_get_reminds))
                 job_id = f"notification_{user_id}"
                 if scheduler.get_job(job_id):
                     scheduler.remove_job(job_id)
+                bot.register_next_step_handler(message, handle_notification_settings)
             elif message.text == 'Налаштувати час сповіщення':
                 bot.send_message(message.chat.id, 'Будь ласка, вкажіть час сповіщення у форматі HH:MM(година:хвилина)')
                 bot.register_next_step_handler(message, set_reminding_time)
@@ -292,11 +302,10 @@ def set_reminding_time(message):
         reminding_time_obj = datetime.datetime.strptime(reminding_time, '%H:%M').time()
         with get_db() as db:
             update_user_info(db, user_id, reminding_time=reminding_time_obj)
-            bot.send_message(message.chat.id, f'Час сповіщення встановлено на {reminding_time}', reply_markup=generete_notification_keyboard(get_user_by_id(db,user_id).is_get_reminds))
+            bot.send_message(message.chat.id, f'Час сповіщення встановлено на {reminding_time}', reply_markup=settings_kb)
             update_user_notification_schedule(user_id, reminding_time_obj,message)
     except ValueError:
         bot.send_message(message.chat.id, 'Невірний формат часу. Будь ласка, спробуйте ще раз.')
-        bot.register_next_step_handler(message, set_reminding_time)
 
 
 #Даний фрагмент коду буде повідомляти користувачів, що їх повідомлення, яке не буде у форматі тексту, буде незрозуміле ботові
