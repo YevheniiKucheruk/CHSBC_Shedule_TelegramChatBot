@@ -38,7 +38,6 @@ def update_week():
     with get_db() as db:
         swap_weeks(db)
 
-
 def initialize_scheduler():
     job_id = "update_week"
     if not scheduler.get_job(job_id):
@@ -50,7 +49,6 @@ def initialize_scheduler():
 
 def clear_scheduler():
     scheduler.remove_all_jobs()
-
 
 def update_user_notification_schedule(user_id, reminding_time,message):
     job_id = f"notification_{user_id}"
@@ -122,7 +120,6 @@ def set_the_speciality(message):
         else:
             bot.send_message(message.chat.id, 'Будь ласка, почніть з команди /start', reply_markup=start_kb)
 
-
 @bot.message_handler(func=is_group_selection)
 def set_the_group(message):
     user_id = message.from_user.id
@@ -140,7 +137,9 @@ def set_the_group(message):
 def choose_showing_shedule(message):
     bot.send_message(message.chat.id,'Що хочете подивитись:',reply_markup=show_shedule_kb)
 
-@bot.message_handler(func=lambda message: message.text == 'Показати розклад на сьогоднішній день')
+
+@bot.message_handler(commands=['today'])
+@bot.message_handler(func=lambda message: message.text == 'Сьогоднішній розклад')
 def send_today_schedule(message):
     user_id = message.from_user.id
     with get_db() as db:
@@ -159,14 +158,15 @@ def send_today_schedule(message):
         else:
             bot.send_message(message.chat.id, 'Будь ласка, почніть з команди /start', reply_markup=start_kb)
 
-@bot.message_handler(func=lambda message: message.text == 'Показати розклад дзвінків')
+@bot.message_handler(func=lambda message: message.text == 'Розклад дзвінків')
 def send_call_schedule(message):
     with get_db() as db:
         call_schedule = get_call_schedule(db)
         formatted_schedule = format_call_schedule(call_schedule)
         send_long_message(message.chat.id, f"Розклад дзвінків:\n{formatted_schedule}")
 
-@bot.message_handler(func=lambda message: message.text == 'Показати розклад на тиждень')
+@bot.message_handler(commands=['week'])
+@bot.message_handler(func=lambda message: message.text == 'Тижневий розклад')
 def send_week_schedule(message):
     user_id = message.from_user.id
     with get_db() as db:
@@ -184,8 +184,7 @@ def send_long_message(chat_id, message):
     for i in range(0, len(message), max_length):
         bot.send_message(chat_id, message[i:i+max_length])
 
-
-@bot.message_handler(func=lambda message: message.text == 'Показати який тиждень')
+@bot.message_handler(func=lambda message: message.text == 'Тип тижня')
 def send_current_week_type(message):
     with get_db() as db:
         week_type = get_current_week_type(db)
@@ -194,11 +193,9 @@ def send_current_week_type(message):
         else:
             bot.send_message(message.chat.id, "Не вдалося визначити тип тижня. Будь ласка, спробуйте пізніше.",reply_markup=show_shedule_kb)
 
-
 @bot.message_handler(func=lambda message: message.text == 'Назад')
 def back(message):
     bot.send_message(message.chat.id, 'Що ви бажаєте зробити:', reply_markup=main_kb)
-
 
 
 #Даний фрагмент коду показує інфомацію про користувача
@@ -306,7 +303,6 @@ def set_reminding_time(message):
             update_user_notification_schedule(user_id, reminding_time_obj,message)
     except ValueError:
         bot.send_message(message.chat.id, 'Невірний формат часу. Будь ласка, спробуйте ще раз.')
-
 
 #Даний фрагмент коду буде повідомляти користувачів, що їх повідомлення, яке не буде у форматі тексту, буде незрозуміле ботові
 @bot.message_handler(content_types=['audio','document','photo','pass','video','video_note','voice','location','contact'])

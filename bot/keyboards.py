@@ -36,5 +36,5 @@ def generete_notification_keyboard(is_notificated):
     return notification_kb
 
 show_shedule_kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
-show_shedule_kb.add(types.KeyboardButton(text='Показати розклад на сьогоднішній день'),types.KeyboardButton(text='Показати розклад на тиждень'),types.KeyboardButton(text='Показати розклад дзвінків'),types.KeyboardButton(text='Показати який тиждень'))
+show_shedule_kb.add(types.KeyboardButton(text='Сьогоднішній розклад'),types.KeyboardButton(text='Тижневий розклад'),types.KeyboardButton(text='Розклад дзвінків'),types.KeyboardButton(text='Тип тижня'))
 show_shedule_kb.add(types.KeyboardButton(text='Назад'))
