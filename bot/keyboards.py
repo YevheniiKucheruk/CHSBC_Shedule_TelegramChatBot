@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import telebot.types as types
 from bot.information import speciality_list
 main_kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
-main_kb.add(types.KeyboardButton(text='Показати розклад'),types.KeyboardButton(text='Показати мою інформацію'),types.KeyboardButton(text='Налаштування'))
+main_kb.add(types.KeyboardButton(text='Показати розклад'),types.KeyboardButton(text='Показати інформацію'),types.KeyboardButton(text='Налаштування'))
 
 speciality_kb = types.ReplyKeyboardMarkup(resize_keyboard=True,row_width=3)
 for i in range(0,len(speciality_list),2):

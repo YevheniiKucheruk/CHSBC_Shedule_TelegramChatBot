@@ -102,3 +102,4 @@ if __name__ == "__main__":
     clear_week_days(session)
     fill_time_schedule(session)
     fill_schedule(session)
+    print('All done!')

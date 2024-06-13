@@ -199,7 +199,7 @@ def back(message):
 
 
 #Даний фрагмент коду показує інфомацію про користувача
-@bot.message_handler(func=lambda message: message.text == 'Показати мою інформацію')
+@bot.message_handler(func=lambda message: message.text == 'Показати інформацію')
 @bot.message_handler(commands=['my_info'])
 def my_info(message):
     user_id = message.from_user.id
